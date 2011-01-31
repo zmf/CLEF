@@ -1,7 +1,7 @@
 <?php
 /**
  * @name CLEF
- * @version 0.18
+ * @version 0.19
  * @link http://www.yiiframework.com/extension/clef
  * 
  * @author eval <zamanfoo@gmail.com>
@@ -13,7 +13,7 @@ class ClefCommand extends CConsoleCommand {
     /**
      * Class constants
      */
-    const CLEF_USERAGENT = 'CLEF/0.46 (Yii Command Line Extension Finder)';
+    const CLEF_USERAGENT = 'CLEF/0.19 (Yii Command Line Extension Finder)';
     const YII_BASE_URL = 'http://www.yiiframework.com';
 
     public function actionIndex() {
@@ -149,6 +149,71 @@ class ClefCommand extends CConsoleCommand {
         }        
         
     }
+    public function actionListcategory() {
+        
+        $categories = array(
+            'Auth' => 1,
+            'Caching' => 2,
+            'Console' => 3,
+            'Database' => 4,
+            'Date & Time' => 5,
+            'Error Handling' => 6,
+            'File System' => 7,
+            'Logging' => 8,
+            'Mail' => 9,
+            'Networking' => 10,
+            'Security' => 11,
+            'User Interface' => 15,
+            'Validation' => 12,
+            'Web Service' => 13,
+            'Others' => 14,
+        );
+        
+        print "\nSelect one of the following categories:\n";
+        
+        $cnt = 0;
+        foreach($categories as $name => $val) {
+            $cnt++;
+            print "[" . $val . "]:" . $name;
+            print ($cnt % 3 !== 0)? "\t\t" : "\n";
+        }
+        
+        do {
+            if(isset($selected)) print "Unknown selection. Please select a category based on the above matrix.\n";
+            print "\nWhich category do you want to browse?: ";
+            $selected = trim(fgets(STDIN));
+        } while (array_search($selected, $categories) === false);
+        
+        $categoryNameAr = array_keys($categories, $selected);
+        print "[" . $categoryNameAr[0] . "] selected. Initiating search..\n";
+        
+        $client = $this->_getClient();
+        curl_setopt($client, CURLOPT_URL, $this->_getCategoryPage($selected));
+        $tuData = curl_exec($client);
+
+        if (curl_errno($client)) {
+            echo 'Curl error: ' . curl_error($client);
+            return;
+        }
+
+        curl_close($client);
+        
+        $matches = array();
+        preg_match_all("/<div class=\"item\">.*?<h3 class=\"title\"><a href=\".*?\">([\w-]+)?<\/a><\/h3>.*?teaser\">(.*?)<\/div>.*?By <a href=\"\/user\/\d+\/\">(.*?)<\/a>/ism", $tuData, $matches);
+        
+        $total = count($matches[0]);
+        $extensions = array();
+        for ($i = 0; $i < $total; $i++) {
+            $extensions[$i]['name'] = $matches[1][$i];
+            $extensions[$i]['shortInfo'] = preg_replace("/\s+/m", " ", strip_tags($matches[2][$i]));
+            $extensions[$i]['author'] = $matches[3][$i];
+        }
+        
+        foreach ($extensions as $ext) {
+            print $ext['name'] . " - " . $ext['shortInfo'] . " (by " . $ext['author'] . ")\n";
+        }           
+        
+    }
     
     public function actionSearch($query) {
         if(!isset($query)) {
@@ -239,6 +304,10 @@ EOD;
         return self::YII_BASE_URL . "/extensions/" . $criteria;
     }
     
+    private function _getCategoryPage($criteria) {
+        return self::YII_BASE_URL . "/extensions/?category=" . $criteria;
+    }
+    
     private function _getExtHomepage($extName) {
         return self::YII_BASE_URL . "/extension/" . $extName;
     }
@@ -251,8 +320,6 @@ EOD;
         return "[" . date('H:i:s', time()) . "] ";
     }
 
-    
-    
     
     
     
