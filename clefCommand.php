@@ -280,12 +280,16 @@ EXAMPLES
    Downloads the latest version of the requested extension to the current
    directory.
 
-* yiic clef list --type=[option]
+ * yiic clef list --type=[option]
    Lists top extensions by type based on one of the following options:
    - top-rated
    - newest
    - top-commented
    - top-downloaded
+
+ * yiic clef listcategory
+   Lists extensions by category type. This command needs no arguments as it 
+   runs in interactive mode.
 
 EOD;
     }
